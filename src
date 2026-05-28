@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "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/chat.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "src/index.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/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/chat",
+      "dest": "/api/chat.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/src/index.html"
+    }
+  ]
+}
