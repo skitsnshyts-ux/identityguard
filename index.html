@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IdentityGuard — DEVONN LYNCH</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold: #FFB800;
+    --gold-dim: #FFB80066;
+    --gold-faint: #FFB80018;
+    --red: #EF5350;
+    --green: #66BB6A;
+    --blue: #4FC3F7;
+    --bg: #09090F;
+    --bg2: #0D0D16;
+    --bg3: #111120;
+    --border: #1C1C2E;
+    --border-dim: #141426;
+    --text: #D8D8E8;
+    --text-dim: #888899;
+    --text-faint: #444455;
+  }
+
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Source Serif 4', serif; overflow: hidden; }
+
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2A2A3E; border-radius: 4px; }
+
+  @keyframes pulse { 0%,80%,100%{opacity:.25;transform:scale(.75)} 40%{opacity:1;transform:scale(1)} }
+  @keyframes slideUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes shimmer { 0%,100%{opacity:.7} 50%{opacity:1} }
+  @keyframes scan { 0%{transform:translateX(-100%)} 100%{transform:translateX(300%)} }
+  @keyframes borderPulse { 0%,100%{border-color:#FFB80022} 50%{border-color:#FFB80055} }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  @keyframes glow { 0%,100%{box-shadow:0 0 6px #FFB80020} 50%{box-shadow:0 0 18px #FFB80055} }
+  @keyframes tickerScroll { 0%{transform:translateX(100%)} 100%{transform:translateX(-100%)} }
+
+  /* LAYOUT */
+  #app { height: 100vh; display: flex; flex-direction: column; max-width: 980px; margin: 0 auto; }
+
+  /* HEADER */
+  #header {
+    background: linear-gradient(135deg, #0A0A16 0%, #0E0E1E 100%);
+    border-bottom: 1px solid var(--gold-dim);
+    padding: 14px 24px 12px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+    animation: borderPulse 4s ease-in-out infinite;
+  }
+  #header::before {
+    content: '';
+    position: absolute; top: 0; left: 0; width: 40%; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    animation: scan 5s linear infinite;
+  }
+  .header-inner { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+  .header-logo { display:flex; align-items:center; gap:10px; }
+  .logo-text { font-family:'Playfair Display',serif; font-size:19px; letter-spacing:3px; color:var(--gold); font-weight:700; }
+  .badge-active { background:var(--gold-faint); border:1px solid var(--gold-dim); border-radius:3px; padding:2px 7px; font-size:9px; font-family:'IBM Plex Mono',monospace; color:var(--gold); letter-spacing:2px; animation: glow 3s infinite; }
+  .header-sub { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text-faint); letter-spacing:2px; margin-top:3px; }
+  .header-sub span { color:#FFD54F; font-weight:600; }
+  .header-right { display:flex; align-items:center; gap:16px; }
+  .legal-block { text-align:right; }
+  .legal-label { font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--text-faint); letter-spacing:1.5px; }
+  .legal-name { font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--gold); font-weight:600; letter-spacing:2px; margin-top:2px; }
+  .legal-note { font-family:'IBM Plex Mono',monospace; font-size:8px; color:var(--text-faint); margin-top:2px; letter-spacing:1px; }
+
+  /* STATS ROW */
+  .stats-row { display:flex; gap:16px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border-dim); }
+  .stat-chip { display:flex; align-items:center; gap:5px; }
+  .stat-dot { width:6px; height:6px; border-radius:50%; }
+  .stat-dot.green { background:#66BB6A; box-shadow:0 0 6px #66BB6A88; }
+  .stat-dot.gold { background:var(--gold); box-shadow:0 0 6px var(--gold-dim); }
+  .stat-dot.red { background:#EF5350; box-shadow:0 0 6px #EF535088; }
+  .stat-label { font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--text-faint); letter-spacing:1px; }
+  .stat-val { font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--text-dim); letter-spacing:.5px; }
+
+  /* TICKER */
+  #ticker {
+    background: linear-gradient(90deg, #140E00, #1C1400, #140E00);
+    border-bottom: 1px solid #FFB80020;
+    padding: 6px 0;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+  }
+  #ticker::before, #ticker::after {
+    content:''; position:absolute; top:0; width:40px; height:100%; z-index:1;
+  }
+  #ticker::before { left:0; background:linear-gradient(90deg,#140E00,transparent); }
+  #ticker::after { right:0; background:linear-gradient(-90deg,#140E00,transparent); }
+  .ticker-inner { display:flex; white-space:nowrap; animation: tickerScroll 30s linear infinite; }
+  .ticker-item { font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--gold); letter-spacing:.5px; padding:0 28px; opacity:.85; }
+  .ticker-sep { color:var(--text-faint); padding:0 4px; }
+
+  /* TABS */
+  #tabs { display:flex; gap:0; border-bottom:1px solid var(--border); flex-shrink:0; background:var(--bg2); }
+  .tab-btn {
+    font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1.5px;
+    color:var(--text-faint); background:transparent; border:none; cursor:pointer;
+    padding:9px 18px; border-bottom:2px solid transparent; transition:all .15s;
+  }
+  .tab-btn:hover { color:var(--text-dim); }
+  .tab-btn.active { color:var(--gold); border-bottom-color:var(--gold); }
+  .tab-badge { background:var(--gold-faint); border:1px solid var(--gold-dim); border-radius:10px; padding:1px 5px; font-size:8px; margin-left:5px; color:var(--gold); }
+
+  /* PANELS */
+  .panel { display:none; flex:1; flex-direction:column; min-height:0; overflow:hidden; }
+  .panel.active { display:flex; }
+
+  /* QUICK ACTIONS */
+  #actions { padding:12px 24px 8px; flex-shrink:0; }
+  .actions-label { font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--text-faint); letter-spacing:2.5px; margin-bottom:8px; }
+  .actions-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
+  @media(max-width:640px) { .actions-grid { grid-template-columns:repeat(2,1fr); } }
+  .action-btn {
+    background: var(--bg3); border: 1px solid var(--border); border-radius:8px;
+    padding:9px 8px; cursor:pointer; transition:all .18s ease; text-align:left;
+  }
+  .action-btn:hover { transform:translateY(-2px); filter:brightness(1.2); border-color:#FFB80033; }
+  .action-btn:active { transform:translateY(0); }
+  .action-btn:disabled { opacity:.35; cursor:not-allowed; transform:none; }
+  .action-icon { font-size:14px; margin-bottom:4px; }
+  .action-label { font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:600; line-height:1.35; }
+
+  /* CHAT */
+  #chat-wrap { flex:1; padding:0 24px 0; overflow:hidden; display:flex; flex-direction:column; min-height:0; }
+  #chat {
+    flex:1; background:var(--bg2); border:1px solid var(--border);
+    border-radius:10px; padding:14px; overflow-y:auto; margin-bottom:10px;
+  }
+  .empty-state { text-align:center; padding:30px 20px; }
+  .empty-icon { font-size:36px; margin-bottom:10px; }
+  .empty-title { font-family:'Playfair Display',serif; color:var(--gold); font-size:16px; margin-bottom:7px; }
+  .empty-sub { color:var(--text-faint); font-size:13px; line-height:1.7; }
+  .ssn-warning { margin-top:14px; padding:8px 13px; background:var(--gold-faint); border:1px solid var(--gold-dim); border-radius:7px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#FFB80099; }
+  .msg { margin-bottom:13px; animation:slideUp .22s ease; display:flex; flex-direction:column; }
+  .msg.user { align-items:flex-end; }
+  .msg.assistant { align-items:flex-start; }
+  .msg-label { font-family:'IBM Plex Mono',monospace; font-size:8px; color:var(--text-faint); letter-spacing:1.5px; margin-bottom:3px; }
+  .msg-bubble {
+    max-width:88%; padding:10px 13px; border-radius:10px; font-size:13px; line-height:1.65;
+  }
+  .msg.user .msg-bubble {
+    background:linear-gradient(135deg,#1A1400,#221A00);
+    border:1px solid #FFB80044; border-radius:10px 10px 2px 10px; color:#FFD54F;
+  }
+  .msg.assistant .msg-bubble {
+    background:var(--bg3); border:1px solid var(--border);
+    border-radius:10px 10px 10px 2px; color:var(--text);
+  }
+  .msg-bubble .bold-line { font-weight:700; color:var(--gold); margin-top:8px; display:block; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.5px; }
+  .msg-bubble .numbered { padding-left:14px; margin-top:3px; color:#D0D0E8; display:block; }
+  .msg-bubble .bulleted { padding-left:14px; margin-top:2px; color:#A0A0C0; display:block; }
+  .msg-bubble .link { color:#4FC3F7; text-decoration:underline; }
+  .typing { display:flex; gap:5px; align-items:center; padding:3px 0; }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--gold); animation:pulse 1.2s ease-in-out infinite; }
+  .dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
+
+  /* INPUT */
+  #input-wrap { display:flex; gap:8px; padding:0 24px 12px; flex-shrink:0; }
+  #user-input {
+    flex:1; background:var(--bg2); border:1px solid var(--border); border-radius:8px;
+    padding:10px 14px; color:var(--text); font-size:13px; font-family:'Source Serif 4',serif;
+    resize:none; transition:border-color .2s;
+  }
+  #user-input:focus { outline:none; border-color:var(--gold-dim); }
+  #user-input::placeholder { color:var(--text-faint); }
+  #send-btn {
+    background:var(--bg3); border:1px solid var(--gold-dim); border-radius:8px;
+    padding:10px 18px; color:var(--gold); font-family:'IBM Plex Mono',monospace;
+    font-size:11px; font-weight:600; letter-spacing:1px; cursor:pointer; transition:all .18s ease;
+  }
+  #send-btn:hover { background:var(--gold); color:#000; }
+  #send-btn:disabled { opacity:.35; cursor:not-allowed; }
+
+  /* WATCHLIST PANEL */
+  #panel-watchlist { padding:16px 24px; overflow-y:auto; }
+  .wl-section-title { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text-faint); letter-spacing:2px; margin-bottom:10px; margin-top:16px; }
+  .wl-section-title:first-child { margin-top:0; }
+  .wl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:7px; }
+  .wl-chip {
+    background:var(--bg3); border:1px solid var(--border); border-radius:7px;
+    padding:8px 12px; display:flex; justify-content:space-between; align-items:center;
+    animation:fadeIn .3s ease;
+  }
+  .wl-chip.flagged { border-color:#EF535044; background:#1A0A0A; }
+  .wl-chip.verified { border-color:#66BB6A44; background:#0A140A; }
+  .wl-name { font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; }
+  .wl-chip.flagged .wl-name { color:#EF5350; }
+  .wl-chip.verified .wl-name { color:#66BB6A; }
+  .wl-chip:not(.flagged):not(.verified) .wl-name { color:var(--gold); }
+  .wl-tag { font-family:'IBM Plex Mono',monospace; font-size:8px; color:var(--text-faint); letter-spacing:1px; }
+  .wl-add { display:flex; gap:8px; margin-top:14px; }
+  .wl-input {
+    flex:1; background:var(--bg2); border:1px solid var(--border); border-radius:7px;
+    padding:8px 12px; color:var(--text); font-size:12px; font-family:'IBM Plex Mono',monospace;
+  }
+  .wl-input:focus { outline:none; border-color:var(--gold-dim); }
+  .wl-input::placeholder { color:var(--text-faint); }
+  .wl-add-btn {
+    background:var(--bg3); border:1px solid var(--gold-dim); border-radius:7px;
+    padding:8px 14px; color:var(--gold); font-family:'IBM Plex Mono',monospace;
+    font-size:10px; font-weight:600; cursor:pointer; transition:all .15s;
+  }
+  .wl-add-btn:hover { background:var(--gold); color:#000; }
+
+  /* DOCUMENTS PANEL */
+  #panel-docs { padding:16px 24px; overflow-y:auto; }
+  .doc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
+  .doc-card {
+    background:var(--bg3); border:1px solid var(--border); border-radius:10px;
+    padding:14px; cursor:pointer; transition:all .18s; animation:fadeIn .3s ease;
+  }
+  .doc-card:hover { border-color:var(--gold-dim); transform:translateY(-2px); }
+  .doc-icon { font-size:22px; margin-bottom:8px; }
+  .doc-title { font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; color:var(--gold); margin-bottom:4px; }
+  .doc-desc { font-size:11px; color:var(--text-faint); line-height:1.5; }
+  .doc-prefilled { font-family:'IBM Plex Mono',monospace; font-size:8px; color:#66BB6A; margin-top:6px; letter-spacing:1px; }
+
+  /* BACKEND SPEC PANEL */
+  #panel-spec { padding:16px 24px; overflow-y:auto; }
+  .spec-block { background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:14px; animation:fadeIn .3s ease; }
+  .spec-title { font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; color:var(--gold); letter-spacing:1.5px; margin-bottom:10px; }
+  .spec-code { font-family:'IBM Plex Mono',monospace; font-size:11px; color:#A8D8A8; line-height:1.8; white-space:pre-wrap; overflow-x:auto; }
+  .spec-note { font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--text-faint); letter-spacing:1px; margin-top:8px; border-top:1px solid var(--border-dim); padding-top:8px; }
+  .spec-copy-btn {
+    background:var(--bg2); border:1px solid var(--border); border-radius:5px;
+    padding:4px 10px; color:var(--text-dim); font-family:'IBM Plex Mono',monospace;
+    font-size:9px; cursor:pointer; float:right; transition:all .15s; margin-left:10px;
+  }
+  .spec-copy-btn:hover { border-color:var(--gold-dim); color:var(--gold); }
+
+  /* FOOTER */
+  #footer {
+    border-top:1px solid var(--border-dim); padding:7px 24px;
+    display:flex; justify-content:space-between; align-items:center; flex-shrink:0;
+  }
+  .footer-text { font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--text-faint); letter-spacing:1px; }
+
+  /* TOAST */
+  #toast {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px);
+    background:var(--bg3); border:1px solid var(--gold-dim); border-radius:8px;
+    padding:10px 18px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--gold);
+    transition:transform .3s ease; z-index:100; pointer-events:none; white-space:nowrap;
+  }
+  #toast.show { transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div id="header">
+    <div class="header-inner">
+      <div>
+        <div class="header-logo">
+          <span class="logo-text">🛡 IDENTITYGUARD</span>
+          <span class="badge-active">ACTIVE</span>
+        </div>
+        <div class="header-sub">AUTHORIZED USER: <span>DEVONN LYNCH</span></div>
+      </div>
+      <div class="header-right">
+        <div class="stats-row">
+          <div class="stat-chip"><div class="stat-dot green"></div><div><div class="stat-label">BUREAUS</div><div class="stat-val">3 MONITORED</div></div></div>
+          <div class="stat-chip"><div class="stat-dot gold"></div><div><div class="stat-label">WATCHLIST</div><div class="stat-val" id="wl-count">12 VARIANTS</div></div></div>
+          <div class="stat-chip"><div class="stat-dot red"></div><div><div class="stat-label">ALERTS</div><div class="stat-val">SCANNING</div></div></div>
+        </div>
+        <div class="legal-block">
+          <div class="legal-label">LEGAL NAME ON FILE</div>
+          <div class="legal-name">DEVONN LYNCH</div>
+          <div class="legal-note">TWO N'S · NO MIDDLE NAME · NO SUFFIX</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TICKER -->
+  <div id="ticker">
+    <div class="ticker-inner" id="ticker-inner"></div>
+  </div>
+
+  <!-- TABS -->
+  <div id="tabs">
+    <button class="tab-btn active" data-tab="chat">💬 AI AGENT</button>
+    <button class="tab-btn" data-tab="watchlist">⚠️ WATCHLIST <span class="tab-badge" id="tab-wl-count">12</span></button>
+    <button class="tab-btn" data-tab="docs">📄 DOCUMENTS</button>
+    <button class="tab-btn" data-tab="spec">⚙️ BACKEND SPEC</button>
+  </div>
+
+  <!-- PANEL: AI CHAT -->
+  <div class="panel active" id="panel-chat" style="flex-direction:column">
+    <div id="actions">
+      <div class="actions-label">QUICK ACTIONS — DEVONN LYNCH</div>
+      <div class="actions-grid" id="actions-grid"></div>
+    </div>
+    <div id="chat-wrap">
+      <div id="chat">
+        <div class="empty-state" id="empty-state">
+          <div class="empty-icon">🛡️</div>
+          <div class="empty-title">Welcome, Devonn.</div>
+          <div class="empty-sub">Your personal identity protection agent is ready.<br/>Select a quick action above or type your question below.</div>
+          <div class="ssn-warning">🔐 Never enter your full SSN in this chat window</div>
+        </div>
+      </div>
+    </div>
+    <div id="input-wrap">
+      <input id="user-input" type="text" placeholder="Ask about credit freezes, disputes, fraud alerts, IRS Form 14039..." />
+      <button id="send-btn">SEND</button>
+    </div>
+  </div>
+
+  <!-- PANEL: WATCHLIST -->
+  <div class="panel" id="panel-watchlist">
+    <div class="wl-section-title">✅ LEGAL NAME (PROTECTED)</div>
+    <div class="wl-grid" id="wl-verified"></div>
+    <div class="wl-section-title">⚠️ MONITORED VARIANTS — FLAG IF SEEN</div>
+    <div class="wl-grid" id="wl-flagged"></div>
+    <div class="wl-section-title">➕ ADD CUSTOM VARIANT</div>
+    <div class="wl-add">
+      <input class="wl-input" id="wl-new-input" placeholder="e.g. Devonne Lynch Jr." />
+      <button class="wl-add-btn" id="wl-add-btn">+ ADD TO WATCHLIST</button>
+    </div>
+  </div>
+
+  <!-- PANEL: DOCUMENTS -->
+  <div class="panel" id="panel-docs">
+    <div style="margin-bottom:12px">
+      <div class="wl-section-title" style="margin-top:0">PRE-FILLED DOCUMENT TEMPLATES — DEVONN LYNCH</div>
+    </div>
+    <div class="doc-grid" id="doc-grid"></div>
+  </div>
+
+  <!-- PANEL: BACKEND SPEC -->
+  <div class="panel" id="panel-spec">
+    <div class="wl-section-title" style="margin-top:0">BACKEND API SPECIFICATION — IDENTITYGUARD</div>
+
+    <div class="spec-block">
+      <button class="spec-copy-btn" onclick="copySpec('spec-endpoint')">COPY</button>
+      <div class="spec-title">POST /api/chat</div>
+      <div class="spec-code" id="spec-endpoint">// REQUEST
+{
+  "messages": [
+    { "role": "user",      "content": "string" },
+    { "role": "assistant", "content": "string" }
+    // ... full conversation history
+  ]
+}
+
+// RESPONSE (200 OK)
+{
+  "reply": "string"   // assistant message text
+}
+
+// ERROR RESPONSE (4xx / 5xx)
+{
+  "error": "string"
+}</div>
+      <div class="spec-note">Accepts the full message history each request (stateless). Store conversation in client memory.</div>
+    </div>
+
+    <div class="spec-block">
+      <button class="spec-copy-btn" onclick="copySpec('spec-node')">COPY</button>
+      <div class="spec-title">NODE.JS / EXPRESS IMPLEMENTATION</div>
+      <div class="spec-code" id="spec-node">const express = require('express');
+const Anthropic = require('@anthropic-ai/sdk');
+const app = express();
+app.use(express.json());
+
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+const SYSTEM_PROMPT = `You are IdentityGuard, an expert identity 
+protection agent exclusively serving DEVONN LYNCH (legal name: 
+two N's, no middle name, no suffix). You help with:
+- Credit freezes at Equifax, Experian, TransUnion
+- Fraud alerts and dispute letters
+- FTC Identity Theft Reports at IdentityTheft.gov
+- IRS Form 14039 guidance
+- SSN compromise response
+- Monitoring name variants that may be used fraudulently
+
+Always address the user as "Devonn". Be precise, actionable, 
+and include direct URLs when referencing government resources.
+Never ask for full SSN — only last 4 digits if necessary.`;
+
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { messages } = req.body;
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({ error: 'messages array required' });
+    }
+
+    const response = await client.messages.create({
+      model:      'claude-sonnet-4-20250514',
+      max_tokens: 1024,
+      system:     SYSTEM_PROMPT,
+      messages:   messages
+    });
+
+    const reply = response.content
+      .filter(b => b.type === 'text')
+      .map(b => b.text)
+      .join('\n');
+
+    res.json({ reply });
+  } catch (err) {
+    console.error('Anthropic API error:', err);
+    res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+});
+
+app.listen(3000, () => console.log('IdentityGuard API running on :3000'));</div>
+    </div>
+
+    <div class="spec-block">
+      <button class="spec-copy-btn" onclick="copySpec('spec-python')">COPY</button>
+      <div class="spec-title">PYTHON / FASTAPI IMPLEMENTATION</div>
+      <div class="spec-code" id="spec-python">from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import anthropic, os
+from typing import List
+
+app = FastAPI()
+client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+
+SYSTEM = """You are IdentityGuard, an expert identity protection 
+agent exclusively serving DEVONN LYNCH. Help with credit freezes, 
+fraud alerts, dispute letters, FTC reports, IRS Form 14039, and 
+SSN compromise response. Address user as Devonn. Include direct 
+URLs. Never request full SSN."""
+
+class Message(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    messages: List[Message]
+
+@app.post("/api/chat")
+async def chat(req: ChatRequest):
+    try:
+        resp = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1024,
+            system=SYSTEM,
+            messages=[m.dict() for m in req.messages]
+        )
+        reply = "".join(b.text for b in resp.content if b.type == "text")
+        return {"reply": reply}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))</div>
+    </div>
+
+    <div class="spec-block">
+      <button class="spec-copy-btn" onclick="copySpec('spec-env')">COPY</button>
+      <div class="spec-title">ENVIRONMENT & DEPLOYMENT</div>
+      <div class="spec-code" id="spec-env"># .env
+ANTHROPIC_API_KEY=sk-ant-...
+
+# package.json dependencies (Node)
+{
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.0",
+    "express": "^4.18.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.0"
+  }
+}
+
+# CORS (add to Express for browser requests)
+const cors = require('cors');
+app.use(cors({ origin: ['http://localhost:8080', 'https://yourdomain.com'] }));
+
+# Rate limiting recommendation
+# - 60 requests/hour per IP
+# - Use express-rate-limit or equivalent
+
+# Recommended: Vercel / Railway / Render serverless deploy
+# Set ANTHROPIC_API_KEY in environment variables dashboard</div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div id="footer">
+    <span class="footer-text">🔐 NEVER ENTER YOUR FULL SSN IN CHAT</span>
+    <span class="footer-text" id="model-label">AI: CLAUDE SONNET · LIVE</span>
+    <span class="footer-text">AUTHORIZED EXCLUSIVELY: DEVONN LYNCH</span>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─── CONFIG ────────────────────────────────────────────────────────────────────
+const OWNER = "DEVONN LYNCH";
+const MODEL = "claude-sonnet-4-20250514";
+
+const SYSTEM_PROMPT = `You are IdentityGuard, an expert AI identity protection agent exclusively serving ${OWNER} (legal name: two N's, no middle name, no suffix).
+
+Your expertise covers:
+- Credit freezes at all three bureaus (Equifax, Experian, TransUnion) with direct links
+- Fraud alert placement and renewal
+- Formal credit dispute letters (pre-fill with DEVONN LYNCH where needed)
+- FTC Identity Theft Reports via IdentityTheft.gov
+- IRS Form 14039 (Identity Theft Affidavit) guidance
+- SSN compromise response protocol
+- Name variation monitoring and flagging
+- CFPB complaint filing
+
+Always address the user as "Devonn". Be precise, step-by-step, and actionable.
+Include direct government URLs when referencing resources.
+NEVER ask for or reference a full SSN — only last 4 digits if absolutely necessary.
+Format responses with **SECTION HEADERS** on their own lines, numbered steps, and bullet points for clarity.`;
+
+// ─── QUICK ACTIONS ──────────────────────────────────────────────────────────────
+const QUICK_ACTIONS = [
+  { id:"name-check",  icon:"⚠️", label:"Name Variation\nWatchlist",   color:"#FFB800",
+    prompt:"Check all known name variations that could be used fraudulently instead of my legal name DEVONN LYNCH, and tell me how to flag them at each credit bureau." },
+  { id:"freeze",      icon:"🔒", label:"Credit Freeze\n(All 3 Bureaus)", color:"#4FC3F7",
+    prompt:"Walk me through placing a credit freeze at all three bureaus — Equifax, Experian, and TransUnion — for DEVONN LYNCH. Include direct URLs and the PIN/password I should record." },
+  { id:"fraud-alert", icon:"🚨", label:"Place\nFraud Alert",           color:"#EF5350",
+    prompt:"How do I place a 1-year fraud alert for DEVONN LYNCH at each credit bureau? Include direct links, what info I need, and what happens automatically once placed." },
+  { id:"dispute",     icon:"📄", label:"Dispute\nLetter",              color:"#66BB6A",
+    prompt:"Generate a formal credit dispute letter pre-filled with DEVONN LYNCH that I can send certified mail to a credit bureau to dispute a fraudulent account. Include all required legal language." },
+  { id:"ftc",         icon:"🏛️", label:"FTC Identity\nReport",        color:"#AB47BC",
+    prompt:"Guide me step-by-step through filing an Identity Theft Report at IdentityTheft.gov for DEVONN LYNCH. What does it generate and what legal protections does it give me?" },
+  { id:"ssn",         icon:"🔐", label:"SSN\nCompromised",            color:"#FF7043",
+    prompt:"My SSN may be compromised. What are the immediate steps for DEVONN LYNCH? Include SSA contact info, how to get a new SSN if necessary, E-Verify lock, and mySSA.gov." },
+  { id:"fake-account",icon:"🚫", label:"Report\nFake Account",        color:"#26C6DA",
+    prompt:"Someone opened a fraudulent account using DEVONN LYNCH. Give me exact step-by-step instructions for reporting and disputing this with each credit bureau, the FTC, and the creditor directly." },
+  { id:"irs",         icon:"📋", label:"IRS Form\n14039",             color:"#FFA726",
+    prompt:"Walk me through completing IRS Form 14039 (Identity Theft Affidavit) for DEVONN LYNCH. What information is required, where do I send it, and what does the IRS do next?" }
+];
+
+// ─── WATCHLIST DATA ─────────────────────────────────────────────────────────────
+let watchlist = {
+  verified: [
+    { name:"DEVONN LYNCH", tag:"LEGAL NAME" }
+  ],
+  flagged: [
+    { name:"Devon Lynch",       tag:"MISSPELLED" },
+    { name:"Devonne Lynch",     tag:"EXTRA E" },
+    { name:"D. Lynch",          tag:"ABBREVIATED" },
+    { name:"Devonn Lin",        tag:"ALT SURNAME" },
+    { name:"Devonn Linch",      tag:"TYPO SURNAME" },
+    { name:"Devonn Lynch Jr.",  tag:"FALSE SUFFIX" },
+    { name:"Devonn Lynch Sr.",  tag:"FALSE SUFFIX" },
+    { name:"Devonn Lynch II",   tag:"FALSE SUFFIX" },
+    { name:"Devon Lin",         tag:"COMBINED VARIANT" },
+    { name:"De'vonn Lynch",     tag:"PUNCTUATION" },
+    { name:"Devonn M. Lynch",   tag:"FALSE MIDDLE" },
+    { name:"Devonn Lynch III",  tag:"FALSE SUFFIX" }
+  ],
+  custom: []
+};
+
+// ─── DOCUMENT TEMPLATES ─────────────────────────────────────────────────────────
+const DOCUMENTS = [
+  { icon:"📄", title:"CREDIT DISPUTE LETTER", desc:"Formal dispute to credit bureau for fraudulent accounts or incorrect info.", tag:"CFPB COMPLIANT",
+    prompt:"Generate a complete, formal credit dispute letter for DEVONN LYNCH to send to a credit bureau. Pre-fill with my name, include FCRA Section 611 language, space for account details, and certified mail instructions." },
+  { icon:"📋", title:"IRS FORM 14039 GUIDE", desc:"Identity Theft Affidavit walkthrough with field-by-field instructions.", tag:"IRS OFFICIAL",
+    prompt:"Create a detailed field-by-field guide for completing IRS Form 14039 for DEVONN LYNCH, including what to write in each section, where to send it, and what to expect after submission." },
+  { icon:"🏛️", title:"FTC COMPLAINT DRAFT", desc:"Pre-filled FTC Identity Theft Report narrative template.", tag:"FTC FORMAT",
+    prompt:"Draft a complete FTC Identity Theft Report narrative statement for DEVONN LYNCH that I can paste into IdentityTheft.gov. Include all recommended details about unauthorized use of my identity." },
+  { icon:"✉️", title:"CEASE & DESIST LETTER", desc:"Letter to a debt collector or fraudulent creditor demanding they stop contact.", tag:"FDCPA RIGHTS",
+    prompt:"Generate a formal Cease and Desist letter for DEVONN LYNCH to send to a debt collector or creditor attempting to collect on a fraudulent account. Include FDCPA citations and certified mail instructions." },
+  { icon:"🔒", title:"CREDIT FREEZE CHECKLIST", desc:"Step-by-step freeze guide with direct links for all 3 bureaus + extras.", tag:"ALL BUREAUS",
+    prompt:"Create a complete credit freeze checklist for DEVONN LYNCH covering Equifax, Experian, TransUnion, ChexSystems, and NCTUE. Include direct freeze URLs, PIN storage reminders, and temporary lift instructions." },
+  { icon:"📰", title:"POLICE REPORT TEMPLATE", desc:"Statement template for filing an identity theft report with local police.", tag:"LOCAL AUTHORITIES",
+    prompt:"Draft a police report statement template for DEVONN LYNCH to report identity theft to local law enforcement. Include all recommended details, what to ask the officer for, and how to use the report number." }
+];
+
+// ─── TICKER ─────────────────────────────────────────────────────────────────────
+const TICKER_ITEMS = [
+  "⚠️ MONITORING: Devon Lynch · Devonne Lynch · D. Lynch · Devonn Lin · Devonn Linch",
+  "🔐 LEGAL NAME LOCKED: DEVONN LYNCH — TWO N'S · NO MIDDLE NAME · NO SUFFIX",
+  "🏛️ FTC RESOURCE: IdentityTheft.gov",
+  "📋 IRS: Form 14039 Identity Theft Affidavit available at IRS.gov",
+  "🔒 CREDIT FREEZE: Free at all 3 bureaus under FCRA",
+  "🚨 FRAUD ALERT: 1 bureau notifies all 3 automatically — renewable every year",
+  "📄 DISPUTE RIGHTS: FCRA Section 611 — bureaus must investigate within 30 days",
+  "🛡 IDENTITYGUARD AI — EXCLUSIVELY AUTHORIZED: DEVONN LYNCH"
+];
+
+function buildTicker() {
+  const inner = document.getElementById("ticker-inner");
+  const items = [...TICKER_ITEMS, ...TICKER_ITEMS];
+  items.forEach(item => {
+    const span = document.createElement("span");
+    span.className = "ticker-item";
+    span.textContent = item;
+    inner.appendChild(span);
+  });
+}
+buildTicker();
+
+// ─── RENDER QUICK ACTIONS ────────────────────────────────────────────────────────
+const grid = document.getElementById("actions-grid");
+QUICK_ACTIONS.forEach(action => {
+  const btn = document.createElement("button");
+  btn.className = "action-btn";
+  btn.id = "btn-" + action.id;
+  btn.innerHTML = `<div class="action-icon">${action.icon}</div><div class="action-label" style="color:${action.color}">${action.label.replace("\n","<br/>")}</div>`;
+  btn.addEventListener("click", () => sendMessage(action.prompt));
+  grid.appendChild(btn);
+});
+
+// ─── RENDER WATCHLIST ────────────────────────────────────────────────────────────
+function renderWatchlist() {
+  const vEl = document.getElementById("wl-verified");
+  const fEl = document.getElementById("wl-flagged");
+  vEl.innerHTML = "";
+  fEl.innerHTML = "";
+
+  watchlist.verified.forEach(item => {
+    vEl.innerHTML += `<div class="wl-chip verified"><span class="wl-name">${item.name}</span><span class="wl-tag">${item.tag}</span></div>`;
+  });
+
+  const allFlagged = [...watchlist.flagged, ...watchlist.custom];
+  allFlagged.forEach(item => {
+    fEl.innerHTML += `<div class="wl-chip flagged"><span class="wl-name">${item.name}</span><span class="wl-tag">${item.tag}</span></div>`;
+  });
+
+  const total = watchlist.verified.length + allFlagged.length;
+  document.getElementById("wl-count").textContent = total + " VARIANTS";
+  document.getElementById("tab-wl-count").textContent = allFlagged.length;
+}
+renderWatchlist();
+
+document.getElementById("wl-add-btn").addEventListener("click", () => {
+  const val = document.getElementById("wl-new-input").value.trim();
+  if (!val) return;
+  watchlist.custom.push({ name: val, tag: "CUSTOM" });
+  document.getElementById("wl-new-input").value = "";
+  renderWatchlist();
+  showToast("✅ Added to watchlist: " + val);
+});
+document.getElementById("wl-new-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("wl-add-btn").click();
+});
+
+// ─── RENDER DOCUMENTS ───────────────────────────────────────────────────────────
+function renderDocs() {
+  const el = document.getElementById("doc-grid");
+  DOCUMENTS.forEach(doc => {
+    const card = document.createElement("div");
+    card.className = "doc-card";
+    card.innerHTML = `<div class="doc-icon">${doc.icon}</div><div class="doc-title">${doc.title}</div><div class="doc-desc">${doc.desc}</div><div class="doc-prefilled">✓ PRE-FILLED: ${doc.tag}</div>`;
+    card.addEventListener("click", () => {
+      switchTab("chat");
+      sendMessage(doc.prompt);
+    });
+    el.appendChild(card);
+  });
+}
+renderDocs();
+
+// ─── TABS ───────────────────────────────────────────────────────────────────────
+function switchTab(id) {
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  document.querySelector(`[data-tab="${id}"]`).classList.add("active");
+  document.getElementById(`panel-${id}`).classList.add("active");
+}
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+});
+
+// ─── SPEC COPY ──────────────────────────────────────────────────────────────────
+function copySpec(id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => showToast("📋 Copied to clipboard"));
+}
+
+// ─── TOAST ──────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const toast = document.getElementById("toast");
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 2800);
+}
+
+// ─── CHAT HELPERS ────────────────────────────────────────────────────────────────
+let messages = [];
+let loading = false;
+
+function setLoading(val) {
+  loading = val;
+  document.getElementById("send-btn").disabled = val;
+  document.querySelectorAll(".action-btn").forEach(b => b.disabled = val);
+  document.getElementById("user-input").disabled = val;
+}
+
+function formatText(text) {
+  return text.split("\n").map(line => {
+    if (!line.trim()) return '<span style="display:block;height:5px"></span>';
+    if (line.startsWith("**") && line.endsWith("**")) return `<span class="bold-line">${line.replace(/\*\*/g,"")}</span>`;
+    if (/^\d+\./.test(line)) return `<span class="numbered">${line}</span>`;
+    if (line.startsWith("- ") || line.startsWith("• ")) return `<span class="bulleted">${line}</span>`;
+    const linked = line.replace(/(https?:\/\/[^\s]+)/g, '<a class="link" href="$1" target="_blank" rel="noopener">$1</a>');
+    return `<span style="display:block">${linked}</span>`;
+  }).join("");
+}
+
+function appendMsg(role, content) {
+  const empty = document.getElementById("empty-state");
+  if (empty) empty.remove();
+  const chat = document.getElementById("chat");
+  const div = document.createElement("div");
+  div.className = `msg ${role}`;
+  div.innerHTML = `
+    <div class="msg-label">${role === "user" ? OWNER : "IDENTITYGUARD AI"}</div>
+    <div class="msg-bubble">${role === "user" ? `<span style="color:#FFD54F">${content}</span>` : formatText(content)}</div>
+  `;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+function appendTyping() {
+  const empty = document.getElementById("empty-state");
+  if (empty) empty.remove();
+  const chat = document.getElementById("chat");
+  const div = document.createElement("div");
+  div.className = "msg assistant";
+  div.id = "typing-indicator";
+  div.innerHTML = `<div class="msg-label">IDENTITYGUARD AI</div><div class="msg-bubble"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+// ─── SEND MESSAGE (ANTHROPIC API DIRECT) ────────────────────────────────────────
+async function sendMessage(text) {
+  if (!text.trim() || loading) return;
+  switchTab("chat");
+  document.getElementById("user-input").value = "";
+  appendMsg("user", text);
+  messages.push({ role: "user", content: text });
+  setLoading(true);
+  appendTyping();
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: messages
+      })
+    });
+
+    const data = await res.json();
+    document.getElementById("typing-indicator")?.remove();
+
+    if (!res.ok) throw new Error(data.error?.message || "API error " + res.status);
+
+    const reply = data.content
+      .filter(b => b.type === "text")
+      .map(b => b.text)
+      .join("\n");
+
+    appendMsg("assistant", reply);
+    messages.push({ role: "assistant", content: reply });
+  } catch (err) {
+    document.getElementById("typing-indicator")?.remove();
+    appendMsg("assistant", `⚠️ System error: ${err.message}\n\nDevonn, if this is the standalone artifact version, the AI requires the backend API endpoint at /api/chat to be running. See the ⚙️ Backend Spec tab for deployment instructions.`);
+  }
+  setLoading(false);
+}
+
+// ─── EVENT LISTENERS ─────────────────────────────────────────────────────────────
+document.getElementById("send-btn").addEventListener("click", () => {
+  sendMessage(document.getElementById("user-input").value);
+});
+document.getElementById("user-input").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(e.target.value); }
+});
+</script>
+</body>
+</html>
