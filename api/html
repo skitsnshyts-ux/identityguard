@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>IdentityGuard</title>
+</head>
+<body>
+  <h1>IdentityGuard Chat</h1>
+  <textarea id="input"></textarea>
+  <button onclick="send()">Send</button>
+  <pre id="output"></pre>
+
+  <script>
+    async function send() {
+      const msg = document.getElementById("input").value;
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: [{ type: "text", text: msg }]
+            }
+          ]
+        })
+      });
+
+      const data = await res.json();
+      document.getElementById("output").textContent = data.reply;
+    }
+  </script>
+</body>
+</html>
