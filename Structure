@@ -1,8 +1,0 @@
-identityguard/
-├── api/
-│   └── chat.js
-├── src/
-│   └── index.html
-├── package.json
-├── vercel.json
-└── .env (local only, NOT committed)
